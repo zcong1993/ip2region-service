@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/api/annotations.proto";
+
+service IP2Region {
+    rpc Search(IP) returns (IpInfo) {
+        option (google.api.http) = {
+            post: "/v1/rpc/ip"
+            body: "*"
+        };
+    }
+}
+
+message IP {
+    string ip = 1;
+}
+
+message IpInfo {
+    int64 cityId = 1;
+    string country = 2;
+    string region = 3;
+    string province = 4;
+    string city = 5;
+    string isp = 6;
+}

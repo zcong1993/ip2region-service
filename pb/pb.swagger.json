@@ -1,0 +1,79 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "pb.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/rpc/ip": {
+      "post": {
+        "operationId": "Search",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/pbIpInfo"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbIP"
+            }
+          }
+        ],
+        "tags": [
+          "IP2Region"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "pbIP": {
+      "type": "object",
+      "properties": {
+        "ip": {
+          "type": "string"
+        }
+      }
+    },
+    "pbIpInfo": {
+      "type": "object",
+      "properties": {
+        "cityId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "country": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "province": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "isp": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
