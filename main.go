@@ -2,7 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/zcong1993/ip2region-service/service"
+	"go.opencensus.io/examples/exporter"
+	"go.opencensus.io/exporter/jaeger"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
 	"log"
 	"net"
 	"net/http"
@@ -12,6 +18,35 @@ import (
 	"github.com/zcong1993/ip2region-service/pb"
 	"google.golang.org/grpc"
 )
+
+func initJaegerTracing() {
+	svcAddr := os.Getenv("JAEGER_SERVICE_ADDR")
+	if svcAddr == "" {
+		fmt.Println("jaeger initialization disabled.")
+		return
+	}
+
+	view.RegisterExporter(&exporter.PrintExporter{})
+
+	// Register the views to collect server request count.
+	if err := view.Register(ocgrpc.DefaultServerViews...); err != nil {
+		log.Fatal(err)
+	}
+	// Register the Jaeger exporter to be able to retrieve
+	// the collected spans.
+	exporter, err := jaeger.NewExporter(jaeger.Options{
+		CollectorEndpoint: fmt.Sprintf("http://%s", svcAddr),
+		Process: jaeger.Process{
+			ServiceName: "ip2region-service",
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	trace.RegisterExporter(exporter)
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	fmt.Println("jaeger initialization completed.")
+}
 
 func runGatewayServer(rpcPort, port string) {
 	ctx := context.Background()
@@ -31,7 +66,7 @@ func runGatewayServer(rpcPort, port string) {
 }
 
 func runRpcServer(port string) {
-	ss := grpc.NewServer()
+	ss := grpc.NewServer(grpc.StatsHandler(&ocgrpc.ServerHandler{}))
 	pb.RegisterIP2RegionServer(ss, service.NewIP2RegionService(os.Getenv("DB_PATH")))
 
 	listener, err := net.Listen("tcp", ":1234")
@@ -44,6 +79,7 @@ func runRpcServer(port string) {
 }
 
 func main() {
+	go initJaegerTracing()
 	if os.Getenv("GATEWAY") == "true" {
 		println("run gateway server on :9009")
 		go runGatewayServer(":1234", ":9009")
